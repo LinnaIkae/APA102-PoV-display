@@ -1,39 +1,46 @@
 #include "Arduino.h"
-#include "Servo.h"
+#include "HardwareTimer.h"
 #define MOTOR PA1
 
-int onTime;
+HardwareTimer timer(1);
+
+void handler_motor_up(void){
+    digitalWrite(MOTOR, HIGH);
+}
+
+void handler_motor_down(void){
+    digitalWrite(MOTOR, LOW);
+}
+
 void setup()
-
-//min pwm 44000. max 65535, startup with 27000?
-
 {
     Serial1.begin(9600);
-    pinMode(PA1, PWM);
-
-    // This is necessary to start the ESC reliably.
-    // Numbers might change.
-    Serial1.println("Startup with 10000 - 20000 duty cycle slope.");
-    for(int i = 10000; i<30000; i+=1000){
-        pwmWrite(MOTOR, i);
-        Serial1.println(i);
-        delay(500);
-    }
-
-    Serial1.println("Motor starting...");
-    onTime = 47000;
-    pwmWrite(MOTOR, onTime);
+    Serial1.println("Hello there");
+    pinMode(PA1, OUTPUT);
+    // Desired frequency = 500 Hz
+    // SysClk frequency = 72 MHz
+    // Prescaler = 72 => Scaled frequency = 1 MHz
+    // Overflow = 2000
+    // Overflowing frequency = 500 Hz.
+    timer.pause();
+    timer.setPrescaleFactor(72);
+    timer.setOverflow(2000);
+    timer.setMode(TIMER_CH1, TIMER_OUTPUT_COMPARE);
+    timer.setCompare(TIMER_CH1, 0);
+    timer.setMode(TIMER_CH2, TIMER_OUTPUT_COMPARE);
+    timer.setCompare(TIMER_CH2, 1000); // Set to 1 ms pulse initially.
+    timer.attachInterrupt(TIMER_CH1, handler_motor_up);
+    timer.attachInterrupt(TIMER_CH2, handler_motor_down);
+    timer.refresh();
+    timer.resume();
 }
 
 void loop()
 {
-
-    // onTime += 1000;
-    // if(onTime > 65535){
-    //     onTime = 10000;
-    // }
-    // pwmWrite(MOTOR, onTime);
-    // Serial1.print("New onTime:");
-    // Serial1.println(onTime);
-    // delay(500);
+    if(Serial1.available() > 0){
+        int newCompare = Serial1.read();
+        Serial1.println(newCompare);
+        timer.setCompare(TIMER_CH2, newCompare);
+        delay(500);
+    }
 }
