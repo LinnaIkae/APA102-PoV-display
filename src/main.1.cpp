@@ -40,6 +40,7 @@ uint8_t writeLEDFrame2(uint8_t brightness,
     return 0;
 }
 
+const uint8_t 
 
 void setup()
 {
@@ -48,7 +49,7 @@ void setup()
 
     SPI.begin();
     SPI.setBitOrder(MSBFIRST);
-    SPI.setDataMode(SPI_MODE_0); // Might want to test this with other modes.
+    SPI.setDataMode(SPI_MODE_0);
     SPI.setClockDivider(SPI_CLOCK_DIV4); // 76 MHz / 4 = 19 MHz about.
     // 38 MHz is too much (for 72 leds), the data gets garbled and random colours appear.
 
